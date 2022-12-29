@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        form#input-product{display: flex;flex-direction: column;max-width: 300px;}form#input-product input{margin: 5px;}form#input-product img{max-width: 300px;min-height: 250px;border-radius: 10px;}
+    </style>
+    <script>
+        function qs(elm) {
+            return document.querySelector(elm)
+        }
+
+        function ce(elm) {
+            return document.createElement(elm)
+        }
+
+        function parseJSON(str) {
+            try {
+                return JSON.parse(str)
+            } catch (error) {
+                return false
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Master Product</h1>
+    <h3>Input Product</h3>
+    <form id="input-product">
+        <div class="img_prev" id="img_prev"></div>
+        <input type="text" name="product_name" id="product_name" placeholder="Product Name" required>
+        <input type="file" name="product_image" id="product_image">
+        <button type="submit">Send</button>
+    </form>
+    <h3>List Product</h3>
+    <hr>
+    {{range .ProductList}}
+    <ul>
+        <li><img src="/assets/images/{{.Image}}" alt="{{.Image}}"></li>
+        <li>{{.Id}}</li>
+        <li>{{.Name}}</li>
+        <button onclick=deleteProduct({{.Id}},{{.Name}})>Delete</button>
+    </ul>
+    <hr>
+    {{end}}
+    <div class="list-product">
+    </div>
+
+    <!-- DOM -->
+    <script>
+        var formAddProduct = qs("#input-product")
+        var product_image = qs("#product_image")
+        var imgPreview = qs("#img_prev")
+        var frImagePreview = new FileReader()
+        var xmlPostProduct = new XMLHttpRequest()
+        var xmlDeleteProduct = new XMLHttpRequest()
+
+        product_image.addEventListener("click", function() {
+            imgPreview.innerHTML = ""
+        })
+
+        function validationImage() {
+            if (!product_image.files[0] || product_image.files.length != 1) return false
+
+            var content_type = product_image.files[0].type.split("/")
+
+            if (!content_type || content_type.length === 0) return false
+
+            switch (content_type[content_type.length - 1]) {
+                case "jpeg": return true
+                return
+                case "jpg": return true
+                return
+                case "png": return true
+            }
+
+            return false
+        }
+
+        product_image.addEventListener("change", function() {
+
+            if (!validationImage()) return alert("wrong file extention. require : img, jpeg, png")
+
+            return frImagePreview.readAsDataURL(this.files[0])
+        })
+
+        frImagePreview.addEventListener("load", function() {
+            var imgPrev = ce("img")
+            imgPrev.src = this.result
+            imgPreview.appendChild(imgPrev)
+        })
+
+        formAddProduct.addEventListener("submit", function(e) {
+            e.preventDefault()
+            if(!validationImage()) return alert("please insert your product image")
+
+            var dataProduct = new FormData(formAddProduct)
+
+            dataProduct.append("enctype", "multipart/form-data")
+            xmlPostProduct.open("POST", window.origin + "/products/post", true)
+            xmlPostProduct.send(dataProduct)
+        })
+
+        xmlPostProduct.addEventListener("load", function() {
+            var response = parseJSON(this.responseText)
+            console.log(this.responseText)
+            if (!response || response["status"] !== "ok") return alert("invalid data")
+
+            window.location.reload()
+        })
+
+        function deleteProduct(pId, pName) {
+            var dataProduct = new FormData()
+            dataProduct.append("product_id", pId)
+            dataProduct.append("product_name", pName)
+            dataProduct.append("enctype", "application/x-www-form-urlencoded")
+            xmlPostProduct.open("POST", window.origin + "/products/delete", true)
+            xmlPostProduct.send(dataProduct)
+        }
+
+        xmlDeleteProduct.addEventListener("load", function() {
+            var response = parseJSON(this.responseText)
+            if (!response || response["status"] !== "ok") return alert("invalid data")
+
+            window.location.reload()
+        })
+    </script>
+</body>
+</html>
