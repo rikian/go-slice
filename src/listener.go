@@ -3,6 +3,7 @@ package src
 import (
 	"log"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 
@@ -69,12 +70,29 @@ func (l *listenerImpl) Run(addres, port string) {
 
 	go func() {
 		err := router.Run(addres + ":" + port)
+
 		if err != nil {
 			log.Fatalf("failed to serve: %v", err)
+			return
 		}
 	}()
 
 	log.Print("server running at " + addres + ":" + port)
+
+	// uncomment for auto open
+	if addres == "0.0.0.0" || addres == "127.0.0.0" {
+		err := exec.Command("open", "http://localhost:"+port).Start()
+
+		if err != nil {
+			log.Printf("Error opening browser: %v\nBut server running...", err)
+		}
+	} else {
+		err := exec.Command("open", "http://"+addres+":"+port).Start()
+
+		if err != nil {
+			log.Printf("Error opening browser: %v\nBut server running...", err)
+		}
+	}
 
 	<-done
 
